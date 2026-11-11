@@ -49,6 +49,9 @@ data/processed/*
 *.pth
 *.onnx
 
+# Allow joblib model files
+!models/*.joblib
+
 # OS files
 .DS_Store
 Thumbs.db
