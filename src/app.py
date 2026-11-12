@@ -15,34 +15,122 @@ import numpy as np
 # ── Resolve project paths ────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 MODEL_DIR = PROJECT_ROOT / "models"
-ASSETS_DIR = PROJECT_ROOT / "docs" / "assets"
 
 VECTORIZER_PATH = MODEL_DIR / "tfidf_vectorizer.joblib"
 MODEL_PATH = MODEL_DIR / "logistic_regression_model.joblib"
 
-# ── Benchmark Sample Texts ───────────────────────────────────────────
-SAMPLE_PHISHING = (
-    "Dear Customer,\n\n"
-    "We have detected unusual activity and unauthorized sign-in attempts on your account. "
-    "To ensure your security, access has been temporarily restricted. "
-    "Please click the secure link below to verify your identity and restore full access:\n\n"
-    "http://secure-account-verification-portal.com/login?token=892374\n\n"
-    "Failure to verify within 24 hours will result in permanent account suspension.\n\n"
-    "Sincerely,\n"
-    "Customer Security & Protection Department"
-)
 
-SAMPLE_LEGITIMATE = (
-    "Hi Team,\n\n"
-    "Just a friendly reminder that our quarterly planning session is scheduled for "
-    "this Thursday at 2:00 PM in Conference Room B (and via the standard video link).\n\n"
-    "Please review the attached project roadmap and have your departmental updates "
-    "ready so we can finalize the timeline for next sprint.\n\n"
-    "Let me know if anyone has scheduling conflicts.\n\n"
-    "Best regards,\n"
-    "Sarah Jenkins\n"
-    "Senior Project Coordinator"
-)
+# ── Multi-Template Collections ───────────────────────────────────────
+PHISHING_TEMPLATES = [
+    (
+        "Subject: Urgent: Unauthorized Sign-in Attempt Detected\n\n"
+        "Dear Customer,\n\n"
+        "We detected an unrecognized sign-in attempt to your online banking portal "
+        "from an unknown device in Moscow, Russia. For your protection, your access "
+        "has been temporarily restricted.\n\n"
+        "Please verify your identity within 24 hours to prevent permanent account suspension:\n"
+        "http://security-auth-portal-online.net/verify?id=982341\n\n"
+        "Thank you,\nAccount Fraud Prevention Team"
+    ),
+    (
+        "Subject: Request for Immediate Wire Transfer - Confidential\n\n"
+        "Hi,\n\n"
+        "I am currently in an executive meeting and cannot take calls. We have an urgent "
+        "vendor payment that must be settled today to avoid contract termination. Please "
+        "process an outgoing international wire of $18,450 to the account details attached:\n\n"
+        "http://secure-wire-processing-desk.com/invoices/vendor_pay.pdf\n\n"
+        "Confirm once the wire transfer is executed.\n\n"
+        "Regards,\nChief Executive Officer"
+    ),
+    (
+        "Subject: Delivery Notice: Incomplete Shipping Information (Tracking ID: #US-88291)\n\n"
+        "Dear Recipient,\n\n"
+        "Your parcel with express tracking #US-88291 could not be dispatched due to an "
+        "incorrect shipping address on file. A redelivery fee of $1.85 is required to "
+        "release the package.\n\n"
+        "Update your shipping preferences and pay the fee here:\n"
+        "http://postal-express-redelivery-dispatch.org/update-order\n\n"
+        "If unclaimed within 48 hours, the package will be returned to the sender."
+    ),
+    (
+        "Subject: Action Required: Update Your Direct Deposit Information\n\n"
+        "Attention Employee,\n\n"
+        "Our HR payroll system was upgraded over the weekend. All staff must re-confirm "
+        "their direct deposit bank information before Thursday 5:00 PM to ensure this "
+        "month's payroll is credited without delay.\n\n"
+        "Access the employee self-service portal here:\n"
+        "http://internal-hr-benefits-portal.com/payroll/auth\n\n"
+        "Human Resources Payroll Department"
+    ),
+    (
+        "Subject: John Doe shared a confidential document with you via OneDrive\n\n"
+        "You have received an encrypted financial document via Microsoft SharePoint.\n\n"
+        "Document: Q4_Executive_Bonus_Structure.xlsx (3.2 MB)\n"
+        "Access Level: Restricted\n\n"
+        "Click here to sign in with your corporate credentials to view this document:\n"
+        "http://onedrive-live-document-viewer.link/auth-login\n\n"
+        "Microsoft 365 Document Sharing Service"
+    ),
+]
+
+LEGITIMATE_TEMPLATES = [
+    (
+        "Subject: Weekly Team Standup - Agenda & Video Link\n\n"
+        "Hi Team,\n\n"
+        "A quick reminder about our weekly engineering standup tomorrow at 10:00 AM. "
+        "We will review the sprint burndown, discuss blockers on the API migration, "
+        "and introduce our new intern, Alex.\n\n"
+        "Agenda:\n"
+        "1. Sprint review (15 mins)\n"
+        "2. Infrastructure update (10 mins)\n"
+        "3. Open Q&A (10 mins)\n\n"
+        "See you all tomorrow,\nMark"
+    ),
+    (
+        "Subject: Scheduled IT Maintenance Window: Saturday 02:00 UTC\n\n"
+        "Hello all,\n\n"
+        "Please be advised that the corporate network team will be applying standard "
+        "security patches to our internal file servers this Saturday from 2:00 AM to "
+        "5:00 AM UTC. During this period, the internal VPN and shared drives will "
+        "experience intermittent downtime.\n\n"
+        "No action is required on your part. If you experience lingering issues after "
+        "06:00 UTC, please submit an internal ticket at helpdesk.internal.corp.\n\n"
+        "Best regards,\nCorporate IT Infrastructure Team"
+    ),
+    (
+        "Subject: Reminder: Quarterly All-Hands Meeting this Thursday\n\n"
+        "Hi everyone,\n\n"
+        "We look forward to seeing everyone at our Q3 All-Hands meeting this Thursday "
+        "at 3:00 PM in the Main Auditorium and streamed live for remote staff. The "
+        "executive leadership team will share company highlights, financial milestones, "
+        "and celebrate team achievements.\n\n"
+        "Submit your questions for the anonymous AMA session via the Slack "
+        "#all-hands-qa channel.\n\n"
+        "Warmly,\nInternal Communications Team"
+    ),
+    (
+        "Subject: PhishGuard Project Deliverables and Code Review Request\n\n"
+        "Hi Professor and Review Committee,\n\n"
+        "I have committed the final implementation for our Complex Computing Activity "
+        "(PhishGuard: Multi-Source Email Threat Classification). All data pipelines, "
+        "exploratory analysis notebooks, trained model artifacts, and evaluation metrics "
+        "have been validated.\n\n"
+        "The repository contains the complete documentation and technical report "
+        "outlining our results.\n\n"
+        "Sincerely,\nStudent Research Team"
+    ),
+    (
+        "Subject: Re: Budget Spreadsheet for Q3 Review\n\n"
+        "Hi Nadia,\n\n"
+        "Thanks for sending over the updated budget spreadsheet. I reviewed the numbers "
+        "for the marketing and engineering departments and everything looks good. I made "
+        "a few minor adjustments to the travel expense projections based on last quarter's "
+        "actuals.\n\n"
+        "Could you forward the final version to David and the finance team before Friday "
+        "so they can include it in the board presentation?\n\n"
+        "Thanks,\nKevin Park\nOperations Analyst"
+    ),
+]
 
 
 # ── Load artifacts (cached so they persist across reruns) ────────────
@@ -62,10 +150,7 @@ def load_artifacts():
 
 # ── Prediction logic ─────────────────────────────────────────────────
 def predict_email(text: str, vectorizer, model) -> dict:
-    """
-    Classify a single email and return the prediction label,
-    class name, and confidence probability.
-    """
+    """Classify a single email and return prediction with confidence."""
     X = vectorizer.transform([text])
     proba = model.predict_proba(X)[0]
     pred_label = int(np.argmax(proba))
@@ -80,12 +165,20 @@ def predict_email(text: str, vectorizer, model) -> dict:
     }
 
 
-# ── Session State Callbacks for Sample Loading ───────────────────────
-def set_sample_phishing():
-    st.session_state["email_text_input"] = SAMPLE_PHISHING
+# ── Session State Callbacks ──────────────────────────────────────────
+def cycle_phishing_sample():
+    idx = st.session_state.get("phish_idx", -1)
+    idx = (idx + 1) % len(PHISHING_TEMPLATES)
+    st.session_state["phish_idx"] = idx
+    st.session_state["email_text_input"] = PHISHING_TEMPLATES[idx]
 
-def set_sample_legitimate():
-    st.session_state["email_text_input"] = SAMPLE_LEGITIMATE
+
+def cycle_legitimate_sample():
+    idx = st.session_state.get("legit_idx", -1)
+    idx = (idx + 1) % len(LEGITIMATE_TEMPLATES)
+    st.session_state["legit_idx"] = idx
+    st.session_state["email_text_input"] = LEGITIMATE_TEMPLATES[idx]
+
 
 def clear_email_input():
     st.session_state["email_text_input"] = ""
@@ -99,9 +192,13 @@ def main():
         layout="centered",
     )
 
-    # Initialize session state for text input if not present
+    # Initialize session state
     if "email_text_input" not in st.session_state:
         st.session_state["email_text_input"] = ""
+    if "phish_idx" not in st.session_state:
+        st.session_state["phish_idx"] = -1
+    if "legit_idx" not in st.session_state:
+        st.session_state["legit_idx"] = -1
 
     # Header
     st.markdown(
@@ -121,19 +218,21 @@ def main():
     vectorizer, model = load_artifacts()
     st.success("✅ Model and vectorizer loaded successfully.", icon="✅")
 
-    # Sample Buttons
-    st.markdown("##### 🧪 Quick Test Samples")
-    bcol1, bcol2, bcol3 = st.columns([1, 1, 0.7])
+    # Sample Buttons — show which template is active
+    st.markdown("##### 🧪 Quick Test Samples *(click repeatedly to cycle through 5 templates)*")
+    bcol1, bcol2, bcol3 = st.columns([1, 1, 0.6])
     with bcol1:
+        phish_num = st.session_state["phish_idx"] + 1 if st.session_state["phish_idx"] >= 0 else 0
         st.button(
-            "🔴 Load Phishing Sample",
-            on_click=set_sample_phishing,
+            f"🔴 Phishing Sample ({phish_num}/{len(PHISHING_TEMPLATES)})",
+            on_click=cycle_phishing_sample,
             use_container_width=True,
         )
     with bcol2:
+        legit_num = st.session_state["legit_idx"] + 1 if st.session_state["legit_idx"] >= 0 else 0
         st.button(
-            "🟢 Load Legitimate Sample",
-            on_click=set_sample_legitimate,
+            f"🟢 Legit Sample ({legit_num}/{len(LEGITIMATE_TEMPLATES)})",
+            on_click=cycle_legitimate_sample,
             use_container_width=True,
         )
     with bcol3:
@@ -143,15 +242,13 @@ def main():
             use_container_width=True,
         )
 
-    # Input area bound to session state key
+    # Input area bound to session state
     st.markdown("##### 📧 Email Content")
     email_text = st.text_area(
         label="Email content to classify",
         key="email_text_input",
         height=220,
-        placeholder=(
-            "Paste the complete email body or headers here to classify..."
-        ),
+        placeholder="Paste the complete email body or headers here to classify...",
         label_visibility="collapsed",
     )
 
@@ -174,7 +271,7 @@ def main():
             mcol1, mcol2, mcol3 = st.columns(3)
             mcol1.metric("Status", result["class_name"].split(" / ")[0])
             mcol2.metric("Confidence", f"{result['confidence'] * 100:.2f}%")
-            mcol3.metric("Phishing Probability", f"{result['prob_phishing'] * 100:.2f}%")
+            mcol3.metric("Phishing Prob.", f"{result['prob_phishing'] * 100:.2f}%")
 
             # Probability bars
             st.markdown("##### Probability Breakdown")
