@@ -169,12 +169,3 @@ python src/data_loader.py
 # Step 2: Extract TF-IDF features, train Logistic Regression, and export metrics + artifacts
 python src/train.py
 ```
-
-## 👥 Project Team
-
-| Student Name            | Roll Number  | Institution                                     |
-| ----------------------- | ------------ | ----------------------------------------------- |
-| **Muhammad Saad** | `CT-24278` | B.S. Computer Science (Cyber Security), NED UET |
-| **Haris Zamir**   | `CT-24125` | B.S. Computer Science (Cyber Security), NED UET |
-| **Ali Hassan**    | `CT-24136` | B.S. Computer Science (Cyber Security), NED UET |
-| **Muhammad Raza** | `CT-24138` | B.S. Computer Science (Cyber Security), NED UET |
